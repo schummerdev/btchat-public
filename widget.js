@@ -11,9 +11,11 @@
 
   var script = d.currentScript || d.querySelector('script[data-site-id]');
   var siteId = script?.getAttribute('data-site-id');
-  var mode = script?.getAttribute('data-mode') || 'floating'; 
+  var mode = script?.getAttribute('data-mode') || 'floating';
   var theme = script?.getAttribute('data-theme') || 'blue-light';
   var primaryColor = script?.getAttribute('data-primary-color') || '#2563eb';
+  var attrAgentName = script?.getAttribute('data-agent-name') || '';
+  var attrAgentAvatar = script?.getAttribute('data-agent-avatar') || '';
   
   if (!siteId) {
     console.warn('[bt-chat] Missing data-site-id. Widget will not load.');
@@ -32,6 +34,13 @@
   var _cdnHosts = ['cdn.jsdelivr.net', 'cdnjs.cloudflare.com', 'cdn.'];
   var _isCdn = scriptSrc && _cdnHosts.some(function(h) { return scriptSrc.includes(h); });
   var BASE = (!scriptSrc || _isCdn) ? 'https://btchatai.vercel.app' : new URL(scriptSrc).origin;
+
+  // Apply data-* attributes immediately (used when site-info fetch is CSP-blocked)
+  if (attrAgentName) w.__btchat_agent_name = attrAgentName;
+  if (attrAgentAvatar) w.__btchat_agent_avatar = attrAgentAvatar;
+  var themePresets = {'blue-light':'#2563eb','blue-dark':'#1e40af','purple-light':'#9333ea','purple-dark':'#6b21a8','green-light':'#16a34a','green-dark':'#15803d','pink-light':'#ec4899','pink-dark':'#be185d'};
+  if (themePresets[theme]) { w.__btchat_primary_color = themePresets[theme]; primaryColor = themePresets[theme]; }
+  if (script?.getAttribute('data-primary-color')) { w.__btchat_primary_color = primaryColor; }
 
   fetch(BASE + '/api/widget/site-info?apiKey=' + siteId)
     .then(r => r.json())
