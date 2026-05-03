@@ -153,7 +153,8 @@
   var frame = d.createElement('iframe');
   frame.allow = 'microphone';
   var initialTheme = w.__btchat_theme || theme;
-  frame.src = BASE + '/widget?siteApiKey=' + siteId + '&sessionId=' + sessionId + '&theme=' + initialTheme + '&inline=true';
+  var chatUrl = BASE + '/widget?siteApiKey=' + siteId + '&sessionId=' + sessionId + '&theme=' + initialTheme + '&inline=true';
+  frame.src = chatUrl;
   var frameStyle = mode === 'bottom'
     ? 'position: absolute; bottom: 76px; left: 50%; transform: translateX(-50%); width: 450px; height: 550px; border: none; border-radius: 12px; box-shadow: 0 5px 40px rgba(0,0,0,0.16); display: none; z-index: 1000; pointer-events: auto;'
     : mode === 'fixed'
@@ -161,11 +162,26 @@
     : 'position: fixed; bottom: 90px; right: 20px; width: 400px; height: 500px; border: none; border-radius: 12px; box-shadow: 0 5px 40px rgba(0,0,0,0.16); display: none; z-index: 11; pointer-events: auto;';
   frame.style.cssText = frameStyle;
 
+  // Fallback to popup when CSP blocks frame-src
+  var usePopup = false;
+  d.addEventListener('securitypolicyviolation', function(e) {
+    if (e.blockedURI && e.blockedURI.indexOf(BASE) === 0 && e.violatedDirective && e.violatedDirective.indexOf('frame-src') !== -1) {
+      usePopup = true;
+      frame.style.display = 'none';
+    }
+  });
+
   var isOpen = false;
   var chatOpenSent = false;
   renderBtnContent();
   updateTooltip();
   btn.onclick = function() {
+    if (usePopup) {
+      var popupUrl = BASE + '/widget?siteApiKey=' + siteId + '&sessionId=' + sessionId + '&theme=' + (w.__btchat_theme || theme);
+      w.open(popupUrl, 'btchat', 'width=420,height=620,scrollbars=no,resizable=yes,location=no,toolbar=no');
+      return;
+    }
+
     isOpen = !isOpen;
     frame.style.display = isOpen ? 'block' : 'none';
     renderBtnContent();
